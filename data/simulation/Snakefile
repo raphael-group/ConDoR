@@ -1,0 +1,371 @@
+# simulation snakefile
+configfile: "config.yaml"
+
+seeds = [ i for i in range(config["nseeds"])]
+
+import itertools
+
+def filter_combinator(combinator):
+    def filtered_combinator(*args, **kwargs):
+        for wc_comb in combinator(*args, **kwargs):
+            #if int(wc_comb[1][-1]) >= int(wc_comb[2][-1]):
+            if int(wc_comb[1][-1]) == int(wc_comb[2][-1]):
+                yield wc_comb
+    return filtered_combinator
+
+filtered_product = filter_combinator(itertools.product)
+
+rule all:
+    input:
+        # simulation
+        #expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_read_count.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        #expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # condor
+        #expand('condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        #expand('condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # scarlet
+        #expand('scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.edgelist', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # sphyr
+        #expand('sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.out', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # scite
+        #expand('scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_ml0.newick', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # sifit
+        #expand('sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_mlTree.newick', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        #expand('sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.tsv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        # evaluate
+        expand('results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k'], method=config['eval_methods']),
+
+rule simulate:
+    output:
+        readcount_matrix="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_read_count.csv",
+        variantcount_matrix="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_variant_count.csv",
+        character_matrix="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv",
+        #sphyr_file='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_sphyr.txt',
+        #scite_file='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_scite.txt',
+        #phiscs_file='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_phiscs.txt',
+        #sifit_file='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_sifit.txt',
+        scarlet_file='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_readcounts_scarlet.csv',
+        scarlet_file2='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_copynumbertree_scarlet.txt',
+    params:
+        prefix="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}",
+        fn=config['fn'],
+        fp=config['fp'],
+        mutation_rate=config['lambda'],
+        vaf_threshold=config['vaf_threshold'],
+        read_threshold=config['read_threshold'],
+    log:
+        std="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log", 
+        err="ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log",
+    benchmark: "ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark", 
+    shell:
+        "python ../../src/simulation_reads.py -s {wildcards.seed} -o {params.prefix} "
+        " -n {wildcards.ncells} -m {wildcards.ncharacters} -d {wildcards.missing} " 
+        " -p {wildcards.nclusters} -a {params.fp} -b {params.fn} -k {wildcards.k} -l {params.mutation_rate} "
+        " -v  > {log.std} 2> {log.err}"
+
+rule auxiliary:
+    output:
+        cellnames='auxiliary/n{ncells}_m{ncharacters}_cell_names.txt',
+        genenames='auxiliary/n{ncells}_m{ncharacters}_gene_names.txt',
+    params:
+        prefix='auxiliary/n{ncells}_m{ncharacters}'
+    shell:
+        "python ../../scripts/auxiliary.py -n {wildcards.ncells} -m {wildcards.ncharacters} -o {params.prefix} "
+
+rule condor:
+    output:
+        B='condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv',
+    input:
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv',
+    params:
+        prefix='condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}',
+        fp=config['estimated_fp'],
+        fn=config['estimated_fn'],
+    log:
+        std='condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    benchmark: 'condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    shell:
+        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+        ' -o {params.prefix} '
+        ' > {log.std} 2> {log.err} '
+
+rule condor_reads:
+    output:
+        B='condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv',
+    input:
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv',
+        total_read_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_read_count.csv',
+        variant_read_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_variant_count.csv',
+    params:
+        prefix='condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}',
+        fp=config['estimated_fp'],
+        fn=config['estimated_fn'],
+    log:
+        std='condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    benchmark: 'condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    shell:
+        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+        ' -r {input.total_read_matrix} -v {input.variant_read_matrix} '
+        ' -o {params.prefix} '
+        ' > {log.std} 2> {log.err} '
+
+rule scarlet:
+    output:
+        Bmatrix= 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor',
+    input:
+        readcount= 'ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_readcounts_scarlet.csv',
+        copynumbertree= 'ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_copynumbertree_scarlet.txt',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_exec=config['scarlet_exec'],
+        prefix='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}'
+    log:
+        std='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    benchmark: 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_exec} {input.readcount} {input.copynumbertree} {params.prefix} '
+        ' > {log.std} 2> {log.err} ;'
+
+rule fix_scarlet:
+    output:
+        Bmatrix_fixed= 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor_fixed',
+    input:
+        Bmatrix= 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor',
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv',
+    params:
+        prefix='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}'
+    shell:
+        ' python ../../scripts/fix_scarlet_output.py -d {input.character_matrix} -i {params.prefix}.B_ancestor -o {params.prefix}'
+
+rule scarlet_plot:
+    input:
+        Bmatrix='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor_fixed',
+        copynumbertree= 'ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_copynumbertree_scarlet.txt',
+    output:
+        tree='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.edgelist',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_plot_exec=config['scarlet_plot_exec'],
+        prefix='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}'
+    log:
+        std='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.log',
+        err='scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.err.log',
+    benchmark: 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_plot_exec} {input.Bmatrix} {input.copynumbertree} ALL {params.prefix} '
+        ' > {log.std} 2> {log.err} '
+
+rule scarlet_star:
+    output:
+        #Bmatrix= 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}.B_ancestor',
+        LLfile= 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}.LL',
+    input:
+        readcount= 'ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_readcounts_scarlet.csv',
+        copynumbertree= 'cna_trees/m{ncharacters}_p{nclusters}_t{tree_idx}.txt',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_exec=config['scarlet_exec'],
+        prefix='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}'
+    log:
+        std='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}.log',
+        err='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}.err.log',
+    benchmark: 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t{tree_idx}.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_exec} {input.readcount} {input.copynumbertree} {params.prefix} '
+        ' > {log.std} 2> {log.err} ;'
+
+rule parse_scarlet_star:
+    output:
+        Bmatrix='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor',
+        copynumbertree='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_copynumber_tree_scarlet_star.txt',
+    input:
+        LLfile='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t0.LL',
+        #Bfile='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_t0.B_ancestor',
+    params:
+        dir='scarlet_star',
+        cna='cna_trees',
+    log:
+        std='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    benchmark: 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    shell:
+        'python ../../src/parse_scarlet_star.py -n {wildcards.ncells} -m {wildcards.ncharacters} -p {wildcards.nclusters} -k {wildcards.k} -d {wildcards.missing} '
+        ' -s {wildcards.seed} --dir {params.dir} --cna {params.cna} '
+        ' > {log.std} 2> {log.err} ;'
+
+rule fix_scarlet_star:
+    output:
+        Bmatrix_fixed= 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor_fixed',
+    input:
+        Bmatrix= 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor',
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv',
+    params:
+        prefix='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}'
+    shell:
+        ' python ../../scripts/fix_scarlet_output.py -d {input.character_matrix} -i {params.prefix}.B_ancestor -o {params.prefix}'
+
+rule scarlet_star_plot:
+    input:
+        Bmatrix='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.B_ancestor_fixed',
+        copynumbertree= 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_copynumber_tree_scarlet_star.txt',
+    output:
+        tree='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.edgelist',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_plot_exec=config['scarlet_plot_exec'],
+        prefix='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}'
+    log:
+        std='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.log',
+        err='scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.err.log',
+    benchmark: 'scarlet_star/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.plot.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_plot_exec} {input.Bmatrix} {input.copynumbertree} ALL {params.prefix} '
+        ' > {log.std} 2> {log.err} '
+
+
+rule sphyr:
+    output:
+        result='sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.out',
+    input:
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_sphyr.txt',
+    params:
+        exec=config['sphyr_exec'],
+        lT=lambda wildcards: int(wildcards.ncharacters) + int(wildcards.nclusters),
+        fn=config['estimated_fn'],
+        fp=config['estimated_fp'],
+    log:
+        std='sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    benchmark: 'sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    shell:
+        '{params.exec} {input.character_matrix} {output.result} '
+        ' -a {params.fp} -b {params.fn} -lT {params.lT} -lC {wildcards.ncharacters} -k {wildcards.k} -v '
+        ' > {log.std} 2> {log.err} '
+
+rule scite:
+    output:
+        result='scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_ml0.newick',
+    input:
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_scite.txt',
+    params:
+        prefix='scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}',
+        niter=config['scite_niter'],
+        nrestarts=config['scite_nrestarts'],
+        exec=config['scite_exec'],
+        fn=config['estimated_fn'],
+        fp=config['estimated_fp'],
+    benchmark: 'scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark',
+    log:
+        std='scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        err='scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log',
+    shell:
+        '{params.exec} -i {input.character_matrix} -n {wildcards.ncharacters} -m {wildcards.ncells} -o {params.prefix} -a '
+        ' -cc 0 -l {params.niter} -r {params.nrestarts} -fd {params.fp} -ad {params.fn} 0 -max_treelist_size 1 '
+        ' > {log.std} 2> {log.err} '
+
+rule sifit:
+    output:
+        result="sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_mlTree.newick",
+    input:
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_sifit.txt',
+    params:
+        input_prefix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}',
+        output_prefix='sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}',
+        exec=config['sifit_exec'],
+        niter=config['sifit_niter'],
+        nrestarts=config['sifit_nrestarts'],
+        fn=config['estimated_fn'],
+        fp=config['estimated_fp'],
+    benchmark: "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.benchmark",
+    log:
+        std = "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log",
+        err = "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.err.log",
+    shell:
+        "java -jar {params.exec} -ipMat {input.character_matrix} -m {wildcards.ncells} -n {wildcards.ncharacters} -df 0 "
+        " -l {params.niter} -r {params.nrestarts} -fp {params.fp} -fn {params.fn} "
+        " > {log.std} 2> {log.err}; mv {params.input_prefix}_sifit_mlTree.newick {params.output_prefix}_mlTree.newick"
+
+def parse_sifit_fn(wc):
+    with open(f'sifit/n{wc.ncells}_m{wc.ncharacters}_p{wc.nclusters}_k{wc.k}_d{wc.missing}_s{wc.seed}.log', 'r') as inp:
+        for line in inp:
+            if line.startswith('best false negative rate'):
+                return float(line.rstrip('\n').split(' ')[-1])
+
+def parse_sifit_w(wc):
+    with open(f'sifit/n{wc.ncells}_m{wc.ncharacters}_p{wc.nclusters}_k{wc.k}_d{wc.missing}_s{wc.seed}.log', 'r') as inp:
+        for line in inp:
+            if line.startswith('best LOH parameter'):
+                return float(line.rstrip('\n').split(' ')[-1])
+
+def parse_sifit_d(wc):
+    with open(f'sifit/n{wc.ncells}_m{wc.ncharacters}_p{wc.nclusters}_k{wc.k}_d{wc.missing}_s{wc.seed}.log', 'r') as inp:
+        for line in inp:
+            if line.startswith('best deletion parameter'):
+                return float(line.rstrip('\n').split(' ')[-1])
+
+rule sifit_ancestral:
+    output:
+        sifit_ancestral='sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.tsv',
+    input:
+        sifit_newick="sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_mlTree.newick",
+        sifit_log='sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.log',
+        cell_names='auxiliary/n{ncells}_m{ncharacters}_cell_names.txt',
+        gene_names='auxiliary/n{ncells}_m{ncharacters}_gene_names.txt',
+        character_matrix='ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_sifit.txt',
+    params:
+        inferred_fn=parse_sifit_fn,
+        inferred_w=parse_sifit_w,
+        inferred_d=parse_sifit_d,
+        fp=config['estimated_fp'],
+        exec=config['sifit_exec'],
+    benchmark: "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.ancestral.benchmark",
+    log:
+        std = "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.ancestral.log",
+        err = "sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.ancestral.err.log",
+    shell:
+        " java -cp {params.exec} SiFit.algorithm.InferAncestralStates -ipMat {input.character_matrix} -tree {input.sifit_newick} "
+        " -cellNames {input.cell_names} -geneNames {input.gene_names} -expectedMatrix {output.sifit_ancestral} "
+        " -fp {params.fp} -fn {params.inferred_fn} -w {params.inferred_w} -d {params.inferred_d} -df 0 "
+        " > {log.std} 2> {log.err}"
+
+
+def get_method_output(wc):
+    ncells = wc.ncells
+    ncharacters = wc.ncharacters
+    nclusters = wc.nclusters
+    k = wc.k
+    missing = wc.missing
+    seed = wc.seed
+
+    if wc.method == 'scite':
+        return 'scite/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_ml0.newick'
+    if wc.method == 'sphyr':
+        return 'sphyr/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.out'
+    if wc.method == 'condor':
+        return 'condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv'
+    if wc.method == 'condorreads':
+        return 'condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv'
+    if wc.method == 'sifit':
+        return 'sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.tsv'
+    if wc.method == 'scarlet':
+        return 'scarlet/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}.edgelist'
+
+rule evaluate:
+    output:
+        result='results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.csv',
+    input:
+        method_output=get_method_output,
+    params:
+        sim_dir=config['sim_dir'],
+    log:
+        std='results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.log',
+        err='results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.err.log',
+    shell:
+        "python ../../src/evaluate_reads.py -s {wildcards.seed} --method {wildcards.method} -o {output.result} "
+        " -n {wildcards.ncells} -m {wildcards.ncharacters} -d {wildcards.missing} " 
+        " -p {wildcards.nclusters} -k {wildcards.k} "
+        " --dir {params.sim_dir} "
+        " > {log.std} 2> {log.err} "

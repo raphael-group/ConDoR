@@ -1,0 +1,97 @@
+# simulation snakefile
+configfile: "config.yaml"
+
+rule all:
+    input:
+        # condor
+        #expand('condor/CRC2_k{k}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        expand('condor_reads/CRC2_k{k}_B.csv', k=config['k']),
+        expand('scarlet/CRC2.edgelist'),
+
+#rule condor:
+#    output:
+#        B='condor/CRC2_k{k}_B.csv',
+#    input:
+#        character_matrix='ground_truth/CRC2_k{k}_character_matrix.csv',
+#    params:
+#        prefix='condor/CRC2_k{k}',
+#        fp=config['estimated_fp'],
+#        fn=config['estimated_fn'],
+#    log:
+#        std='condor/CRC2_k{k}.log',
+#        err='condor/CRC2_k{k}.err.log',
+#    benchmark: 'condor/CRC2_k{k}.benchmark',
+#    shell:
+#        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+#        ' -o {params.prefix} '
+#        ' > {log.std} 2> {log.err} '
+
+
+rule condor_reads:
+    output:
+        B='condor_reads/CRC2_k{k}_B.csv',
+    input:
+        character_matrix='input/character_matrix.csv',
+        total_read_matrix='input/total_readcounts.csv',
+        variant_read_matrix='input/alt_readcounts.csv',
+    params:
+        prefix='condor_reads/CRC2_k{k}',
+        fp=config['fp'],
+        fn=config['fn'],
+    log:
+        std='condor_reads/CRC2_k{k}.log',
+        err='condor_reads/CRC2_k{k}.err.log',
+    benchmark: 'condor_reads/CRC2_k{k}.benchmark',
+    shell:
+        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+        ' -r {input.total_read_matrix} -v {input.variant_read_matrix} '
+        ' -o {params.prefix} '
+        ' > {log.std} 2> {log.err} '
+
+
+rule scarlet:
+    output:
+        Bmatrix= 'scarlet/CRC2.B_ancestor',
+    input:
+        readcount= 'input/CRC2.csv',
+        copynumbertree= 'input/CRC2-L.csv',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_exec=config['scarlet_exec'],
+        prefix='scarlet/CRC2'
+    log:
+        std='scarlet/CRC2.log',
+        err='scarlet/CRC2.err.log',
+    benchmark: 'scarlet/CRC2.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_exec} {input.readcount} {input.copynumbertree} {params.prefix} '
+        ' > {log.std} 2> {log.err} ;'
+
+rule fix_scarlet:
+    output:
+        Bmatrix_fixed= 'scarlet/CRC2.B_ancestor_fixed',
+    input:
+        Bmatrix= 'scarlet/CRC2.B_ancestor',
+        character_matrix='input/character_matrix.csv',
+    params:
+        prefix='scarlet/CRC2'
+    shell:
+        ' python ../../scripts/fix_scarlet_output.py -d {input.character_matrix} -i {params.prefix}.B_ancestor -o {params.prefix}'
+
+rule scarlet_plot:
+    input:
+        Bmatrix='scarlet/CRC2.B_ancestor_fixed',
+        copynumbertree= 'input/CRC2-L.csv',
+    output:
+        tree='scarlet/CRC2.edgelist',
+    params:
+        python_exec=config['python2_exec'],
+        scarlet_plot_exec=config['scarlet_plot_exec'],
+        prefix='scarlet/CRC2'
+    log:
+        std='scarlet/CRC2.plot.log',
+        err='scarlet/CRC2.plot.err.log',
+    benchmark: 'scarlet/CRC2.plot.benchmark',
+    shell:
+        '{params.python_exec} {params.scarlet_plot_exec} {input.Bmatrix} {input.copynumbertree} ALL {params.prefix} '
+        ' > {log.std} 2> {log.err} '

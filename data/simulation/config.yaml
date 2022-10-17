@@ -1,0 +1,64 @@
+# simulation parameters
+ncells:
+    - 25
+    - 50
+    - 100
+      #- 1000
+
+ncharacters:
+    - 25
+    - 50
+    - 100
+
+nclusters:
+    - 3
+    - 5
+
+fp: 0.001
+fn: 0.001
+lambda: 0.8
+
+missing_rate:
+    - 0
+    - 0.1
+
+k:
+    - 1
+    - 2
+    - 3
+
+vaf_threshold: 0.1
+read_threshold: 5
+
+estimated_fp: 0.0018
+estimated_fn: 0.16
+
+nseeds: 5
+
+# scarlet parameters
+python2_exec: '/n/fs/ragr-data/users/palash/anaconda3/envs/scarlet/bin/python2'
+scarlet_exec: '/n/fs/ragr-data/users/palash/scarlet/code/scarlet.py'
+scarlet_plot_exec: '/n/fs/ragr-data/users/palash/scarlet/code/plot_tree.py'
+
+# sphyr parameters
+sphyr_exec: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
+
+# scite parameters
+scite_nrestarts: 1
+scite_niter: 1000000
+scite_exec: '/n/fs/ragr-data/users/palash/SCITE/scite'
+
+# sifit parameters
+sifit_nrestarts: 1
+sifit_niter: 1000000
+sifit_exec: '/n/fs/ragr-data/users/palash/SiFit/SiFit.jar'
+
+# evaluation parameters
+eval_methods:
+    - condorreads
+    - sphyr
+    - scite
+    - sifit
+    - scarlet
+
+sim_dir: '/n/fs/ragr-data/users/palash/constrained-Dollo/data/simulation_reads/'

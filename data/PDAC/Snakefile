@@ -1,0 +1,108 @@
+# simulation snakefile
+configfile: "config.yaml"
+
+rule all:
+    input:
+        # condor
+        #expand('condor/CRC2_k{k}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        expand('condor_reads/M04_k{k}_B.csv', k=config['k']),
+        #expand('sphyr/M04_k{k}.out', k=config['k']),
+        expand('sphyr/M04_k{k}.dot', k=config['k']),
+        expand('compass/M04_tree.gv')
+
+rule compass:
+    output:
+        tree_file='compass/M04_tree.gv',
+    input:
+        variants_file='input/M04_variants.csv',
+        regions_file='input/M04_regions.csv',
+    params:
+        exec=config['compass_exec'],
+        nchains=config['nchains'],
+        chainlength=config['chainlength'],
+    log:
+        std='compass/M04.log',
+        err='compass/M04.err.log',
+    benchmark: 'compass/M04.benchmark',
+    shell:
+        '{params.exec} -i input/M04 -o {output.tree_file} --nchains {params.nchains} --chainlength {params.chainlength} --CNV 1 '
+        ' > {log.std} 2> {log.err}'
+
+#rule condor:
+#    output:
+#        B='condor/CRC2_k{k}_B.csv',
+#    input:
+#        character_matrix='ground_truth/CRC2_k{k}_character_matrix.csv',
+#    params:
+#        prefix='condor/CRC2_k{k}',
+#        fp=config['estimated_fp'],
+#        fn=config['estimated_fn'],
+#    log:
+#        std='condor/CRC2_k{k}.log',
+#        err='condor/CRC2_k{k}.err.log',
+#    benchmark: 'condor/CRC2_k{k}.benchmark',
+#    shell:
+#        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+#        ' -o {params.prefix} '
+#        ' > {log.std} 2> {log.err} '
+
+rule sphyr:
+    output:
+        result='sphyr/M04_k{k}.out',
+    input:
+        character_matrix='input/sphyr_input.txt',
+    params:
+        exec=config['sphyr_exec'],
+        #lT=7,
+        lT=10,
+        fn=config['sphyr_fn'],
+        fp=config['sphyr_fp'],
+        nmutations=config['nmutations'],
+    log:
+        std='sphyr/M04_k{k}.log',
+        err='sphyr/M04_k{k}.err.log',
+    benchmark: 'sphyr/M04_k{k}.benchmark',
+    shell:
+        '{params.exec} {input.character_matrix} {output.result}'
+        ' -a {params.fp} -b {params.fn} -lT {params.lT} -lC {params.nmutations} -k {wildcards.k} -v '
+        ' > {log.std} 2> {log.err}'
+
+rule sphyr_viz:
+    output:
+        result='sphyr/M04_k{k}.dot',
+    input:
+        sphyr_output='sphyr/M04_k{k}.out',
+        cell_names='input/sphyr_cell_names.txt',
+        mutation_names='input/sphyr_mutation_names.txt',
+    params:
+        exec=config['sphyr_viz_exec'],
+    log:
+        err='sphyr/M04_k{k}_viz.err.log',
+    benchmark: 'sphyr/M04_k{k}_viz.benchmark',
+    shell:
+        '{params.exec} {input.sphyr_output} -t {input.cell_names} -c {input.mutation_names} > {output.result} '
+        ' 2> {log.err} '
+        
+
+rule condor_reads:
+    output:
+        B='condor_reads/M04_k{k}_B.csv',
+    input:
+        character_matrix='input/character_matrix.csv',
+        total_read_matrix='input/total_readcounts.csv',
+        variant_read_matrix='input/alt_readcounts.csv',
+        snp_list='input/snp_list.txt',
+    params:
+        prefix='condor_reads/M04_k{k}',
+        fp=config['fp'],
+        fn=config['fn'],
+        ado=config['ado'],
+    log:
+        std='condor_reads/M04_k{k}.log',
+        err='condor_reads/M04_k{k}.err.log',
+    benchmark: 'condor_reads/M04_k{k}.benchmark',
+    shell:
+        'python ../../src/condor.py -i  {input.character_matrix} -a {params.fp} -b {params.fn} -k {wildcards.k} '
+        ' -r {input.total_read_matrix} -v {input.variant_read_matrix} -s {input.snp_list} --ado {params.ado} '
+        ' -o {params.prefix} '
+        ' > {log.std} 2> {log.err} '

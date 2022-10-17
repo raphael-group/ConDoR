@@ -1,0 +1,18 @@
+#
+
+fp: 0.001
+fn: 0.001
+
+k:
+    #- 0
+    - 1
+      #- 2
+
+vaf_threshold: 0.1
+read_threshold: 5
+
+# scarlet parameters
+python2_exec: '/n/fs/ragr-data/users/palash/anaconda3/envs/scarlet/bin/python2'
+scarlet_exec: '/n/fs/ragr-data/users/palash/scarlet/code/scarlet.py'
+scarlet_plot_exec: '/n/fs/ragr-data/users/palash/scarlet/code/plot_tree.py'
+
