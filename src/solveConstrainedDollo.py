@@ -49,7 +49,8 @@ class solveConstrainedDollo():
                     total_reads = df_total_readcounts.loc[cell][mutation]
                     variant_reads = df_variant_readcounts.loc[cell][mutation]
                     if total_reads > 0:
-                        coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                        coeff = -np.log(total_reads) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                        #coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
                         coeff_mat[cell_idx, mut_idx] = coeff
             self.coeff_mat = coeff_mat                    
                     
@@ -292,7 +293,7 @@ class solveConstrainedDollo():
             none_entries = np.sum(self.A == 1)            
             opt_obj_value = model.getObjective().getValue()            
             print(f'{nzero_entries}, {none_entries}, {opt_obj_value}')
-            print(f'log likelihood: {opt_obj_value + nzero_entries * np.log(1 - self.fn) + none_entries * np.log(self.fp)}')
+            #print(f'log likelihood: {opt_obj_value + nzero_entries * np.log(1 - self.fn) + none_entries * np.log(self.fp)}')
 
 #             solb = np.zeros((ncells, nmutations))
             
