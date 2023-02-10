@@ -49,8 +49,8 @@ class solveConstrainedDollo():
                     total_reads = df_total_readcounts.loc[cell][mutation]
                     variant_reads = df_variant_readcounts.loc[cell][mutation]
                     if total_reads > 0:
-                        coeff = -np.log(total_reads) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
-                        #coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                        #coeff = -np.log(total_reads) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                        coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
                         coeff_mat[cell_idx, mut_idx] = coeff
             self.coeff_mat = coeff_mat                    
                     
