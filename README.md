@@ -5,6 +5,7 @@ Overview of the ConDoR algorithm.
 ConDoR takes as input: (a) A clustering of cells based on copy-number profiles and (b) variant and total read counts from scDNA-seq data.
 ConDoR employs the Constrained k-Dollo model to construct the (c) constrained k-Dollo phylogeny and the (d) mutation matrix.
 
+More details about the problem formulation and the algorithm can be found here: https://www.biorxiv.org/content/10.1101/2023.01.05.522408v1.abstract
 
 ## Contents
 
