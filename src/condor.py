@@ -31,8 +31,8 @@ def tree_to_newick(T, root=None):
             if child_newick != '()':
                 subgs.append(child_newick)
         else:
-            if child.startswith('s'):
-                subgs.append(child)
+            #if child.startswith('s'):
+            subgs.append(child)
     # return "(" + ','.join(map(str, subgs)) + ")"
     if len(subgs) == 1:
         return str(subgs[0])
