@@ -300,7 +300,8 @@ class solveConstrainedDollo():
 #             for i in range(ncells):
 #                 for j in range(nmutations):
 #                     solb[i,j] = np.abs(model.getAttr('x', b)[i,j])
-            solb = np.rint(np.reshape(model.getAttr('x', b).values(), (ncells, nmutations)))
+            #solb = np.rint(np.reshape(model.getAttr('x', b).values(), (ncells, nmutations)))
+            solb = np.rint(np.reshape(np.array(list(model.getAttr('x', b).values())), (ncells, nmutations)))
 
             solc = model.getAttr('x', c)
             for l in range(nclusters):
