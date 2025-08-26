@@ -36,6 +36,9 @@ mkdir data/sample
 python src/simulation_reads.py -n 25 -m 25 -p 5 -k 1 -s 0 -d 0.1 -a 0.001 -b 0.001 -o data/sample/overview
 ```
 
+For a more in depth coverage of the data simulator please refer to [the simulation documentation](data/simulation/README.md).
+
+
 <a name="condor"></a>
 ### ConDoR
 

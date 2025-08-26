@@ -18,8 +18,8 @@ filtered_product = filter_combinator(itertools.product)
 rule all:
     input:
         # simulation
-        #expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_read_count.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
-        #expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_read_count.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
+        expand('ground_truth/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
         # condor
         #expand('condor/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
         #expand('condor_reads/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_B.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
@@ -33,7 +33,7 @@ rule all:
         #expand('sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_mlTree.newick', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
         #expand('sifit/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_character_matrix.tsv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k']),
         # evaluate
-        expand('results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k'], method=config['eval_methods']),
+        #expand('results/n{ncells}_m{ncharacters}_p{nclusters}_k{k}_d{missing}_s{seed}_{method}.csv', filtered_product, seed=seeds, ncells=config['ncells'], ncharacters=config['ncharacters'], nclusters=config['nclusters'], missing=config['missing_rate'], k=config['k'], method=config['eval_methods']),
 
 rule simulate:
     output:

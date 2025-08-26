@@ -36,7 +36,7 @@ estimated_fn: 0.16
 nseeds: 5
 
 # scarlet parameters
-python2_exec: '/n/fs/ragr-data/users/palash/anaconda3/envs/scarlet/bin/python2'
+python2_exec: '/path/to/python'
 scarlet_exec: '/n/fs/ragr-data/users/palash/scarlet/code/scarlet.py'
 scarlet_plot_exec: '/n/fs/ragr-data/users/palash/scarlet/code/plot_tree.py'
 
